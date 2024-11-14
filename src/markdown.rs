@@ -91,6 +91,7 @@ fn multiply_string(string: &str, length: i32) -> String {
     sequence
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
 
@@ -100,10 +101,10 @@ mod tests {
         assert_eq!(
             table(3, 3, Some(headers)).unwrap(),
             "| Header 1 | Header 2 | Header 3 |\n\
-             |---|---|---|\n\
-             |   |   |   |\n\
-             |   |   |   |\n\
-             |   |   |   |\n"
+             |----------|----------|----------|\n\
+             |          |          |          |\n\
+             |          |          |          |\n\
+             |          |          |          |\n"
         );
     }
 
@@ -114,6 +115,60 @@ mod tests {
                 table(0, 0, None).unwrap_err().root_cause()
             ),
             "Invalid dimensions"
+        );
+    }
+
+    #[test]
+    fn test_table_wrong_headers() {
+        let headers = vec!["Header 1".into(), "Header 2".into()];
+        assert_eq!(
+            format!("{}",
+                table(3, 3, Some(headers)).unwrap_err().root_cause()
+            ),
+            "Invalid number of headers"
+        );
+    }
+
+    #[test]
+    fn test_todo_list() {
+        assert_eq!(
+            todo_list(3),
+            "- [ ] \n- [ ] \n- [ ] \n"
+        );
+    }
+
+    #[test]
+    fn test_code_block() {
+        assert_eq!(
+            code_block("rust".into()),
+            "```rust\n\n```"
+        );
+    }
+
+    #[test]
+    fn test_quote() {
+        assert_eq!(
+            quote(3, Some("important".into())),
+            "> [!important]\n\
+             > \n\
+             > \n\
+             > \n"
+        );
+    }
+
+    #[test]
+    fn test_multiply_string() {
+        assert_eq!(
+            multiply_string("-", 3),
+            "---"
+        );
+    }
+
+    #[test]
+    fn test_multiply_string_empty() {
+        assert_eq!(
+            multiply_string("-", 0),
+            ""
         );
     }
 }
