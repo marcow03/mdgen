@@ -26,13 +26,12 @@ Options:
 
 ## Installation
 
-- Install Rust on your system
-- Clone this repo
-- Run `cargo install --path .` from the project directory
+- Install [Rust](https://www.rust-lang.org/) on your system
+- Run `cargo install --git https://github.com/marcow03/mdgen`
 
 ## Usage
 
-Run the following from a terminal to add a markdown table to a file:
+For example run the following from a terminal to add a markdown table to a file:
 
 ```sh
 mdgen table 3x10 -t id,name,age >> file.md
