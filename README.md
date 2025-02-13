@@ -36,3 +36,9 @@ For example run the following from a terminal to add a markdown table to a file:
 ```sh
 mdgen table 3x10 -t id,name,age >> file.md
 ```
+
+Or when editing a file in VIM to insert the output of `mdgen` into the current buffer:
+
+```sh
+:r !mdgen todo 10
+```
