@@ -55,10 +55,23 @@ pub fn table(columns: u32, rows: u32, headers: Option<Vec<String>>) -> Result<St
     Ok(table)
 }
 
-pub fn todo_list(items: u32) -> String {
+pub fn todo_list(num_items: u32, items: Option<Vec<String>>) -> String {
     let mut todo = String::new();
-    for _ in 0..items {
-        todo.push_str("- [ ] \n");
+    let mut count = 0;
+
+    if let Some(items) = items {
+        for i in items {
+            todo.push_str(&format!("- [ ] {}\n", i));
+            count += 1;
+        }
+    }
+
+    let items_left = num_items - count;
+
+    if items_left > 0 {
+        for _ in 0..items_left {
+            todo.push_str("- [ ] \n");
+        }
     }
 
     todo
@@ -111,9 +124,7 @@ mod tests {
     #[test]
     fn test_table_wrong_dimensions() {
         assert_eq!(
-            format!("{}",
-                table(0, 0, None).unwrap_err().root_cause()
-            ),
+            format!("{}", table(0, 0, None).unwrap_err().root_cause()),
             "Invalid dimensions"
         );
     }
@@ -122,27 +133,19 @@ mod tests {
     fn test_table_wrong_headers() {
         let headers = vec!["Header 1".into(), "Header 2".into()];
         assert_eq!(
-            format!("{}",
-                table(3, 3, Some(headers)).unwrap_err().root_cause()
-            ),
+            format!("{}", table(3, 3, Some(headers)).unwrap_err().root_cause()),
             "Invalid number of headers"
         );
     }
 
     #[test]
     fn test_todo_list() {
-        assert_eq!(
-            todo_list(3),
-            "- [ ] \n- [ ] \n- [ ] \n"
-        );
+        assert_eq!(todo_list(3, None), "- [ ] \n- [ ] \n- [ ] \n");
     }
 
     #[test]
     fn test_code_block() {
-        assert_eq!(
-            code_block("rust".into()),
-            "```rust\n\n```"
-        );
+        assert_eq!(code_block("rust".into()), "```rust\n\n```");
     }
 
     #[test]
@@ -158,17 +161,12 @@ mod tests {
 
     #[test]
     fn test_multiply_string() {
-        assert_eq!(
-            multiply_string("-", 3),
-            "---"
-        );
+        assert_eq!(multiply_string("-", 3), "---");
     }
 
     #[test]
     fn test_multiply_string_empty() {
-        assert_eq!(
-            multiply_string("-", 0),
-            ""
-        );
+        assert_eq!(multiply_string("-", 0), "");
     }
 }
+

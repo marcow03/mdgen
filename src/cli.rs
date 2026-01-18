@@ -17,15 +17,38 @@ pub struct Cli {
 pub enum Commands {
     #[clap(about = "Generate a markdown table")]
     Table {
-        #[clap(help = "Table dimensions in the format <rows>x<columns> (e.g. 3x4)", value_parser = parse_table_dimensions)]
+        #[clap(
+            short = 'd',
+            long,
+            value_parser = parse_table_dimensions,
+            default_value = "3x3",
+            help = "Table dimensions in the format <rows>x<columns> or <rows>,<columns> (e.g. 3x4 or 3,4)"
+        )]
         dimensions: (u32, u32),
-        #[clap(short = 't', long, value_delimiter = ',', help = "Table headers in the format <header1>,<header2>,...")]
+        #[clap(
+            short = 't',
+            long,
+            value_delimiter = ',',
+            help = "Table headers in the format <header1>,<header2>,..."
+        )]
         headers: Option<Vec<String>>,
     },
     #[clap(about = "Generate a markdown todo list")]
     Todo {
-        #[clap(help = "Amount of todo list items")]
-        items: u32,
+        #[clap(
+            short = 'n',
+            long,
+            default_value_t = 5,
+            help = "Amount of todo list items"
+        )]
+        num_items: u32,
+        #[clap(
+            short = 'i',
+            long,
+            value_delimiter = ',',
+            help = "Items in the format <item1>,<item2>,..."
+        )]
+        items: Option<Vec<String>>,
     },
     #[clap(about = "Generate a markdown code block")]
     Code {
@@ -50,8 +73,12 @@ fn parse_table_dimensions(value: &str) -> Result<(u32, u32), String> {
         return Err("Invalid seperator, use 'x' or ','".to_string());
     }
 
-    let columns = dimensions[0].parse().map_err(|_| "Invalid columns".to_string())?;
-    let rows = dimensions[1].parse().map_err(|_| "Invalid rows".to_string())?;
+    let columns = dimensions[0]
+        .parse()
+        .map_err(|_| "Invalid columns".to_string())?;
+    let rows = dimensions[1]
+        .parse()
+        .map_err(|_| "Invalid rows".to_string())?;
 
     Ok((columns, rows))
 }
