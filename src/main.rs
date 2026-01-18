@@ -7,6 +7,10 @@ use anyhow::Result;
 use clap::Parser;
 use cli::{Cli, Commands};
 
+const DEFAULT_NUM_ROWS: u32 = 10;
+const DEFAULT_NUM_COLS: u32 = 3;
+const DEFAULT_NUM_TODOS: u32 = 10;
+
 fn main() -> Result<()> {
     // Parse the cli
     let cli = Cli::parse();
@@ -15,31 +19,47 @@ fn main() -> Result<()> {
     match cli.command {
         Commands::Table {
             dimensions,
-            headers,
+            mut headers,
         } => {
-            let mut dimensions = dimensions;
-            let mut headers = headers;
+            let mut rows = DEFAULT_NUM_ROWS;
+            let mut cols= DEFAULT_NUM_COLS;
 
-            let pipe = get_pipe_content();
-            if !pipe.is_empty() {
+            if headers.is_none() && dimensions.is_none() {
+                let pipe = get_pipe_content();
                 headers = try_parse_table_headers(pipe);
                 if let Some(ref headers) = headers {
-                    dimensions.0 = headers.len() as u32;
+                    cols = headers.len() as u32;
                 }
             }
 
-            let table = markdown::table(dimensions.0, dimensions.1, headers)?;
-            println!("{}", table);
-        }
-        Commands::Todo { num_items, items } => {
-            let mut items = items;
-
-            let pipe = get_pipe_content();
-            if !pipe.is_empty() {
-                items = try_parse_todo_items(pipe);
+            if let Some(d) = dimensions {
+                cols = d.0;
+                rows = d.1;
             }
 
-            let todo = markdown::todo_list(num_items, items);
+
+            let table = markdown::table(cols, rows, headers)?;
+            println!("{}", table);
+        }
+        Commands::Todo {
+            num_items,
+            mut items,
+        } => {
+            let mut num = DEFAULT_NUM_TODOS;
+
+            if items.is_none() {
+                let pipe = get_pipe_content();
+                items = try_parse_todo_items(pipe);
+                if let Some(ref items) = items {
+                    num = items.len() as u32;
+                }
+            }
+
+            if let Some(n) = num_items {
+                num = n;
+            } 
+
+            let todo = markdown::todo_list(num, items);
             println!("{}", todo);
         }
         Commands::Code { language } => {
@@ -57,7 +77,7 @@ fn main() -> Result<()> {
 
 fn get_pipe_content() -> String {
     let mut pipe = String::new();
-    let _ = std::io::stdin().lock().read_to_string(&mut pipe);
+    let _ = std::io::stdin().read_to_string(&mut pipe);
 
     pipe
 }

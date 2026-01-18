@@ -42,3 +42,8 @@ Or when editing a file in VIM to insert the output of `mdgen` into the current b
 ```sh
 :r !mdgen todo 10
 ```
+
+To create a table from pipe (`|`) input:
+```sh
+echo "id\nname\nage" | mdgen table
+```

@@ -21,10 +21,9 @@ pub enum Commands {
             short = 'd',
             long,
             value_parser = parse_table_dimensions,
-            default_value = "3x3",
             help = "Table dimensions in the format <rows>x<columns> or <rows>,<columns> (e.g. 3x4 or 3,4)"
         )]
-        dimensions: (u32, u32),
+        dimensions: Option<(u32, u32)>,
         #[clap(
             short = 't',
             long,
@@ -38,10 +37,9 @@ pub enum Commands {
         #[clap(
             short = 'n',
             long,
-            default_value_t = 5,
             help = "Amount of todo list items"
         )]
-        num_items: u32,
+        num_items: Option<u32>,
         #[clap(
             short = 'i',
             long,
