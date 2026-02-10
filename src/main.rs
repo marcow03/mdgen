@@ -1,7 +1,7 @@
 mod cli;
 mod markdown;
 
-use std::io::Read;
+use std::io::{Read, IsTerminal};
 
 use anyhow::Result;
 use clap::Parser;
@@ -75,15 +75,27 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn get_pipe_content() -> String {
+fn get_pipe_content() -> Option<String> {
+    // Check if stdin is a terminal (interactive) - if so, don't try to read from it
+    if std::io::stdin().is_terminal() {
+        return None;
+    }
+
     let mut pipe = String::new();
-    let _ = std::io::stdin().read_to_string(&mut pipe);
-
-    pipe
+    match std::io::stdin().read_to_string(&mut pipe) {
+        Ok(_) => Some(pipe),
+        Err(_) => None,
+    }
 }
 
-fn try_parse_table_headers(content: String) -> Option<Vec<String>> {
-    let lines = content.lines().map(|s| s.to_string()).collect::<Vec<_>>();
+fn try_parse_table_headers(content: Option<String>) -> Option<Vec<String>> {
+    let content = content?;
+    let lines: Vec<String> = content
+        .lines()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
     if lines.is_empty() {
         return None;
     }
@@ -91,11 +103,101 @@ fn try_parse_table_headers(content: String) -> Option<Vec<String>> {
     Some(lines)
 }
 
-fn try_parse_todo_items(content: String) -> Option<Vec<String>> {
-    let lines = content.lines().map(|s| s.to_string()).collect::<Vec<_>>();
+fn try_parse_todo_items(content: Option<String>) -> Option<Vec<String>> {
+    let content = content?;
+    let lines: Vec<String> = content
+        .lines()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+    
     if lines.is_empty() {
         return None;
     }
 
     Some(lines)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_try_parse_table_headers_with_content() {
+        let content = Some("header1\nheader2\nheader3".to_string());
+        let headers = try_parse_table_headers(content);
+        assert_eq!(headers, Some(vec!["header1".to_string(), "header2".to_string(), "header3".to_string()]));
+    }
+
+    #[test]
+    fn test_try_parse_table_headers_with_whitespace() {
+        let content = Some("  header1  \n  header2\nheader3  ".to_string());
+        let headers = try_parse_table_headers(content);
+        assert_eq!(headers, Some(vec!["header1".to_string(), "header2".to_string(), "header3".to_string()]));
+    }
+
+    #[test]
+    fn test_try_parse_table_headers_filters_empty_lines() {
+        let content = Some("header1\n\nheader2\n\n\nheader3".to_string());
+        let headers = try_parse_table_headers(content);
+        assert_eq!(headers, Some(vec!["header1".to_string(), "header2".to_string(), "header3".to_string()]));
+    }
+
+    #[test]
+    fn test_try_parse_table_headers_with_empty_content() {
+        let headers = try_parse_table_headers(Some("".to_string()));
+        assert_eq!(headers, None);
+    }
+
+    #[test]
+    fn test_try_parse_table_headers_with_only_whitespace() {
+        let headers = try_parse_table_headers(Some("  \n  \n  ".to_string()));
+        assert_eq!(headers, None);
+    }
+
+    #[test]
+    fn test_try_parse_table_headers_with_none() {
+        let headers = try_parse_table_headers(None);
+        assert_eq!(headers, None);
+    }
+
+    #[test]
+    fn test_try_parse_todo_items_with_content() {
+        let content = Some("Task 1\nTask 2\nTask 3".to_string());
+        let items = try_parse_todo_items(content);
+        assert_eq!(items, Some(vec!["Task 1".to_string(), "Task 2".to_string(), "Task 3".to_string()]));
+    }
+
+    #[test]
+    fn test_try_parse_todo_items_with_whitespace() {
+        let content = Some("  Task 1  \n  Task 2\nTask 3  ".to_string());
+        let items = try_parse_todo_items(content);
+        assert_eq!(items, Some(vec!["Task 1".to_string(), "Task 2".to_string(), "Task 3".to_string()]));
+    }
+
+    #[test]
+    fn test_try_parse_todo_items_filters_empty_lines() {
+        let content = Some("Task 1\n\nTask 2\n\n\nTask 3".to_string());
+        let items = try_parse_todo_items(content);
+        assert_eq!(items, Some(vec!["Task 1".to_string(), "Task 2".to_string(), "Task 3".to_string()]));
+    }
+
+    #[test]
+    fn test_try_parse_todo_items_with_empty_content() {
+        let items = try_parse_todo_items(Some("".to_string()));
+        assert_eq!(items, None);
+    }
+
+    #[test]
+    fn test_try_parse_todo_items_with_only_whitespace() {
+        let items = try_parse_todo_items(Some("  \n  \n  ".to_string()));
+        assert_eq!(items, None);
+    }
+
+    #[test]
+    fn test_try_parse_todo_items_with_none() {
+        let items = try_parse_todo_items(None);
+        assert_eq!(items, None);
+    }
+}
+
